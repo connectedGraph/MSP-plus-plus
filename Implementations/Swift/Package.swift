@@ -25,7 +25,6 @@ let package = Package(
         .library(name: "MSPCommandKit", targets: ["MSPCommandKit"]),
         .library(name: "MSPExternalRunner", targets: ["MSPExternalRunner"]),
         .library(name: "MSPAgentBridge", targets: ["MSPAgentBridge"]),
-        .library(name: "MSPPOSIXCore", targets: ["MSPPOSIXCore"]),
         .library(name: "MSPPythonRuntime", targets: ["MSPPythonRuntime"]),
         .library(name: "MSPPythonEmbeddedRuntime", targets: ["MSPPythonEmbeddedRuntime"]),
         .library(name: "MSPApple", targets: ["MSPApple"]),
@@ -78,7 +77,6 @@ let package = Package(
                 "MSPCore",
                 "MSPExternalRunner",
                 "MSPGit",
-                "MSPPOSIXCore",
                 "MSPPtySupport",
                 "MSPPythonEmbeddedRuntime",
                 "MSPPythonRuntime",
@@ -106,12 +104,6 @@ let package = Package(
                 "Tools/MSP/update_plan/Contract",
                 "Tools/MSP/update_plan/Runtime"
             ]
-        ),
-        .target(
-            name: "MSPPOSIXCore",
-            dependencies: ["MSPCore"],
-            path: "Sources/MSPPOSIXCore",
-            sources: ["Commands", "Registry", "Support"]
         ),
         .target(
             name: "MSPPythonRuntime",
@@ -152,7 +144,6 @@ let package = Package(
                 "MSPCommandKit",
                 "MSPExternalRunner",
                 "MSPAgentBridge",
-                "MSPPOSIXCore",
                 "MSPApple",
                 "MSPPtySupport"
             ],
