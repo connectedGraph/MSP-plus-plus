@@ -40,6 +40,25 @@ That is why MSP is not a wrapper around `/bin/sh`.
 
 It is the operating-system semantics layer inside the app.
 
+## MSP++ — This Fork's Direction
+
+This repository is a fork with a different command-surface strategy: **MSP++**.
+
+Where upstream hand-writes the POSIX command surface in Swift, MSP++ backs the
+same shell semantics layer with **real permissive open-source runtimes** through
+a unified bridge:
+
+- **coreutils** → toybox (BSD-0), each applet registered as an external command
+- **git** → the real git binary
+- **python** → embedded CPython (dlopen libpython) with the VFS broker
+
+One `enable(.bridge)` wires all three. Compiled runtimes are sandboxed at the
+mapping tier (path mapping + output sanitization); the interpreter (Python) is
+sandboxed at the interception tier (its `os.open` is routed through the virtual
+filesystem).
+
+Design doc: [Docs/MSP++.md](Docs/MSP++.md)
+
 ## PhotoSorter Demo
 
 PhotoSorter turns an iOS Photos Library into an MSP workspace. In this demo, an
@@ -313,8 +332,10 @@ The current Swift implementation includes:
 
 - a `ModelShellProxy` facade
 - a WorkspaceFS boundary backed by an app-provided workspace directory
-- a hand-written MSP shell parser and runtime layer
-- a POSIX-like core command pack
+- a hand-written MSP shell parser and runtime layer (kept)
+- a unified bridge (`MSPBridge`) backing the command surface with real runtimes
+  — toybox coreutils, real git, embedded CPython — replacing the hand-written
+  POSIX command pack
 - policy and audit extension points
 - an agent bridge for command execution
 - Swift unit and integration tests
@@ -546,6 +567,7 @@ ModelShellProxy/
 |   |       |-- MSPAgentBridge/
 |   |       |-- MSPCommandKit/
 |   |       |-- MSPExternalRunner/
+|   |       |-- MSPBridge/
 |   |       |-- MSPGit/
 |   |       |-- MSPChat/
 |   |       |-- MSPChatCommands/
@@ -708,6 +730,7 @@ The Swift package currently exposes these libraries:
 - `MSPShell`
 - `MSPCommandKit`
 - `MSPExternalRunner`
+- `MSPBridge`
 - `MSPGit`
 - `MSPAgentBridge`
 - `MSPPOSIXCore`

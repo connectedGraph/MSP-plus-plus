@@ -2,6 +2,13 @@
 
 import PackageDescription
 
+// MSP++ — trimmed manifest for the bridge build.
+//
+// Removed vs upstream: swift-cgit2 / MSPGit (git is bridged as a real external
+// binary, not embedded via libgit2), and the iOS-only / chat / validator /
+// apply_patch-bridge targets. Kept: shell + virtual FS + external-runner +
+// embedded-python + MSPBridge. Zero external network dependencies.
+
 let package = Package(
     name: "ModelShellProxy",
     platforms: [
@@ -17,20 +24,13 @@ let package = Package(
         .library(name: "MSPShell", targets: ["MSPShell"]),
         .library(name: "MSPCommandKit", targets: ["MSPCommandKit"]),
         .library(name: "MSPExternalRunner", targets: ["MSPExternalRunner"]),
-        .library(name: "MSPGit", targets: ["MSPGit"]),
         .library(name: "MSPAgentBridge", targets: ["MSPAgentBridge"]),
         .library(name: "MSPPOSIXCore", targets: ["MSPPOSIXCore"]),
         .library(name: "MSPPythonRuntime", targets: ["MSPPythonRuntime"]),
         .library(name: "MSPPythonEmbeddedRuntime", targets: ["MSPPythonEmbeddedRuntime"]),
         .library(name: "MSPApple", targets: ["MSPApple"]),
-        .library(name: "MSPChat", targets: ["MSPChat"]),
-        .library(name: "MSPChatCommands", targets: ["MSPChatCommands"]),
-        .library(name: "MSPAgentChatStore", targets: ["MSPAgentChatStore"]),
-        .library(name: "MSPCodexApplyPatchRuntime", targets: ["MSPCodexApplyPatchRuntime"]),
-        .executable(name: "msp-chat-validate", targets: ["MSPChatValidatorCLI"])
-    ],
-    dependencies: [
-        .package(url: "https://github.com/sharplet/swift-cgit2.git", exact: "1.1.1")
+        .library(name: "MSPBridge", targets: ["MSPBridge"]),
+        .executable(name: "mspxx-smoke", targets: ["MSPBridgeSmoke"]),
     ],
     targets: [
         .target(
@@ -62,14 +62,6 @@ let package = Package(
             name: "MSPExternalRunner",
             dependencies: ["MSPCore"],
             path: "Sources/MSPExternalRunner"
-        ),
-        .target(
-            name: "MSPGit",
-            dependencies: [
-                "MSPCore",
-                .product(name: "Cgit2", package: "swift-cgit2")
-            ],
-            path: "Sources/MSPGit"
         ),
         .target(
             name: "MSPAgentBridge",
@@ -116,18 +108,6 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MSPCodexApplyPatchRuntime",
-            dependencies: [
-                "MSPAgentBridge",
-                .target(name: "MSPCodexApplyPatchBridge", condition: .when(platforms: [.iOS]))
-            ],
-            path: "Sources/MSPCodexApplyPatchRuntime"
-        ),
-        .binaryTarget(
-            name: "MSPCodexApplyPatchBridge",
-            path: "Sources/Tools/Vendor/Codex/apply_patch/Artifacts/MSPCodexApplyPatchBridge.xcframework"
-        ),
-        .target(
             name: "MSPPOSIXCore",
             dependencies: ["MSPCore"],
             path: "Sources/MSPPOSIXCore",
@@ -155,38 +135,14 @@ let package = Package(
             publicHeadersPath: "include"
         ),
         .target(
-            name: "MSPChat",
-            path: "Sources/MSPChat",
-            sources: [
-                "MSPChat.swift",
-                "MSPChatError.swift",
-                "JSON/MSPChatJSONIO.swift",
-                "JSON/MSPChatJSONValue.swift",
-                "Manifest/MSPChatManifest.swift",
-                "Package/MSPChatCoreReader.swift",
-                "Package/MSPChatCoreWriter.swift",
-                "Package/MSPChatPackage.swift",
-                "Timeline/MSPChatTimelineEvent.swift",
-                "Timeline/MSPChatTimelineRecords.swift",
-                "MSPChatValidator.swift",
-                "Validation"
-            ]
-        ),
-        .target(
-            name: "MSPAgentChatStore",
-            dependencies: ["MSPChat", "MSPAgentBridge"],
-            path: "Sources/MSPAgentChatStore"
-        ),
-        .target(
-            name: "MSPChatCommands",
-            dependencies: ["MSPCore", "MSPChat"],
-            path: "Sources/MSPChatCommands"
+            name: "MSPBridge",
+            dependencies: ["MSPCore", "MSPExternalRunner", "MSPPythonRuntime", "MSPPythonEmbeddedRuntime"],
+            path: "Sources/MSPBridge"
         ),
         .executableTarget(
-            name: "MSPChatValidatorCLI",
-            dependencies: ["MSPChat"],
-            path: "Sources/MSPChatValidatorCLI",
-            sources: ["main.swift"]
+            name: "MSPBridgeSmoke",
+            dependencies: ["ModelShellProxy", "MSPBridge", "MSPApple"],
+            path: "Sources/MSPBridgeSmoke"
         ),
         .target(
             name: "ModelShellProxy",

@@ -1,5 +1,7 @@
 #if canImport(Darwin)
 import Darwin
+#elseif canImport(Glibc)
+import Glibc
 #endif
 import Foundation
 
@@ -27,7 +29,7 @@ struct MSPCPythonSymbols: @unchecked Sendable {
     var pyThreadStateSwap: PyThreadStateSwap
 
     init(library: MSPCPythonLibrary) throws {
-        #if canImport(Darwin)
+        #if canImport(Darwin) || canImport(Glibc)
         let handle: UnsafeMutableRawPointer?
         switch library {
         case .currentProcess:
@@ -54,7 +56,7 @@ struct MSPCPythonSymbols: @unchecked Sendable {
         #endif
     }
 
-    #if canImport(Darwin)
+    #if canImport(Darwin) || canImport(Glibc)
     private static func symbol<T>(_ name: String, handle: UnsafeMutableRawPointer) throws -> T {
         guard let pointer = dlsym(handle, name) else {
             throw MSPPythonEmbeddedRuntimeError.engineUnavailable("missing CPython symbol \(name)")
