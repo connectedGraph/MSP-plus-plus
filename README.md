@@ -454,7 +454,8 @@ SDK target, start with `Spec/Profiles/MSPModelWorkspaceExecutionSDKProfile.md`.
 
 If you want to understand what is currently implemented, start with
 `Implementations/Swift/Sources/ModelShellProxy/`, then read `MSPCore`,
-`MSPShellLanguage`, `MSPShellExpansion`, `MSPShell`, and `MSPPOSIXCore`.
+`MSPShellLanguage`, `MSPShellExpansion`, `MSPShell`, and `MSPBridge` (the
+unified bridge that backs the command surface with toybox + git + CPython).
 
 If you want to understand behavior coverage, start with `Conformance/Inventory`
 and `Conformance/Fixtures`.
@@ -560,7 +561,6 @@ ModelShellProxy/
 |   |       |-- MSPShellLanguage/
 |   |       |-- MSPShellExpansion/
 |   |       |-- MSPShell/
-|   |       |-- MSPPOSIXCore/
 |   |       |-- MSPPythonRuntime/
 |   |       |-- MSPPythonEmbeddedRuntime/
 |   |       |-- MSPApple/
@@ -568,12 +568,7 @@ ModelShellProxy/
 |   |       |-- MSPCommandKit/
 |   |       |-- MSPExternalRunner/
 |   |       |-- MSPBridge/
-|   |       |-- MSPGit/
-|   |       |-- MSPChat/
-|   |       |-- MSPChatCommands/
-|   |       |-- MSPAgentChatStore/
-|   |       |-- MSPCodexApplyPatchRuntime/
-|   |       |-- MSPChatValidatorCLI/
+|   |       |-- MSPBridgeSmoke/
 |   |       |-- MSPPtySupport/
 |   |       `-- Tools/
 |   |-- AndroidKotlin/
@@ -647,21 +642,22 @@ matching, and parameter expansion.
 `Implementations/Swift/Sources/MSPShell/` composes the shell language and
 expansion layers into the runtime shell support used by MSP.
 
-`Implementations/Swift/Sources/MSPPOSIXCore/` contains the POSIX-like command
-pack, including filesystem, text, search, comparison, metadata, data, numeric,
-process, and utility commands.
+`Implementations/Swift/Sources/MSPBridge/` is the MSP++ unified bridge. It
+backs the command surface with real permissive open-source runtimes instead of
+a hand-written POSIX command pack: toybox coreutils (mapping tier), the real
+git binary (mapping tier), and embedded CPython with a virtual-filesystem
+broker (interception tier). `MSPBridge.bridgeProfile(_:)` wires all three in a
+single `enable(...)` call.
 
 `Implementations/Swift/Sources/MSPPythonRuntime/` defines the optional Python
 command profile. It owns Python invocation planning, command registration, and
 the shared `MSPPythonRuntime` backend protocol.
 
 `Implementations/Swift/Sources/MSPPythonEmbeddedRuntime/` contains the
-in-process Python backend boundary for iOS, iPadOS, macOS, and visionOS. The
-current CPython engine dynamically binds to an app-supplied CPython library; it
-does not make Python part of the default POSIX core profile. Python subprocess
-entry points such as `subprocess.run(...)` are routed back through MSP command
-execution so child commands stay inside the same workspace, policy, and audit
-boundary.
+in-process Python backend boundary. The current CPython engine dynamically
+binds to an app-supplied CPython library. Python subprocess entry points such
+as `subprocess.run(...)` are routed back through MSP command execution so child
+commands stay inside the same workspace, policy, and audit boundary.
 
 `Implementations/Swift/Sources/MSPApple/` adapts Apple platform storage into an
 MSP workspace. The agent sees virtual paths rooted at `/`; the app owns the real
@@ -671,19 +667,8 @@ directory and policy.
 MSP command surface. It keeps the model-facing interface small while preserving
 structured command results internally.
 
-`Implementations/Swift/Sources/MSPGit/` contains optional Git-backed runtime
-support exposed as a Swift package library.
-
-`Implementations/Swift/Sources/MSPChat/`,
-`Implementations/Swift/Sources/MSPChatCommands/`, and
-`Implementations/Swift/Sources/MSPAgentChatStore/` contain the current `.chat`
-package reader/writer, validator, `chat read` command pack, and agent chat store
-helper.
-
-`Implementations/Swift/Sources/MSPCodexApplyPatchRuntime/` contains the optional
-Codex-compatible `apply_patch` bridge runtime. `MSPPtySupport`,
-`MSPChatValidatorCLI`, and `Implementations/Swift/Sources/Tools/` are support
-surfaces used by public libraries, executables, or platform bridges.
+`MSPPtySupport` and `Implementations/Swift/Sources/Tools/` are support surfaces
+used by public libraries, executables, or platform bridges.
 
 `Examples/` contains app-shaped demonstrations. These are not just snippets;
 they show how MSP fits into real product loops such as chat, transcript
@@ -731,44 +716,33 @@ The Swift package currently exposes these libraries:
 - `MSPCommandKit`
 - `MSPExternalRunner`
 - `MSPBridge`
-- `MSPGit`
 - `MSPAgentBridge`
-- `MSPPOSIXCore`
 - `MSPPythonRuntime`
 - `MSPPythonEmbeddedRuntime`
 - `MSPApple`
-- `MSPChat`
-- `MSPChatCommands`
-- `MSPAgentChatStore`
-- `MSPCodexApplyPatchRuntime`
 
-It also exposes these command-line products:
+It also exposes this command-line product:
 
-- `msp-chat-validate`
-- `msp-request-parity-runner`
+- `mspxx-smoke`
 
-The common Apple-platform entry point is:
+The common entry point on any platform with the bridge runtimes available is:
 
 ```swift
-let shell = try ModelShellProxy
-    .iOS(workspaceURL: workspaceURL)
-    .enable(.posixCore)
-```
-
-Python is optional and must be enabled explicitly:
-
-```swift
-let pythonEngine = try MSPCPythonEngine(
-    library: .path(cpythonLibraryURL),
-    workspaceRootURL: workspaceURL,
-    pythonHomeURL: cpythonHomeURL
+let configuration = MSPBridgeConfiguration(
+    toyboxBinDirectoryURL: toyboxBinDirectoryURL,
+    gitURL: URL(fileURLWithPath: "/usr/bin/git"),
+    pythonLibrary: .path(cpythonLibraryURL)
 )
 
 let shell = try ModelShellProxy
     .iOS(workspaceURL: workspaceURL)
-    .enable(.posixCore)
-    .enable(.python(runtime: MSPPythonEmbeddedRuntime(engine: pythonEngine)))
+    .enable(MSPBridge.bridgeProfile(configuration))
 ```
+
+`MSPBridge.bridgeProfile(_:)` wires the whole command surface in one call:
+toybox coreutils (mapping tier), the real git binary (mapping tier), and
+embedded CPython with its virtual-filesystem broker (interception tier). It
+replaces the hand-written POSIX command pack entirely.
 
 An agent runtime can connect to the shell through:
 

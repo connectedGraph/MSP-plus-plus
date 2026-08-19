@@ -77,9 +77,10 @@ MSP++ 的取舍:换来"不手写命令",付出"依赖宿主真二进制 + 映射
 ## 状态 / 下一步
 
 - ✅ bridge 模块编译通过 + 端到端验证(功能 + 隔离)
-- ⬜ 删掉手写 POSIX 命令(只留 shell builtin + bridge)
+- ✅ 删掉手写 POSIX 命令(只留 shell builtin + bridge)
+- ✅ git 实际工作流 / 管道 / 重定向边界测试(见 Implementations/Swift/Tests/MSPBridge)
 - ⬜ 接进 pi-shell(替换 fake POSIX 内核)
-- ⬜ git 实际工作流 / 管道 / 重定向边界测试
+- ⬜ 删命令时的历史参考(Conformance/Inventory/CommandCompatibilityDrafts)归档或清理
 
 ---
 
