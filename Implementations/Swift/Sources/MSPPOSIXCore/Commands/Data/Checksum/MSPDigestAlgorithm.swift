@@ -1,4 +1,6 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#endif
 import Foundation
 import MSPCore
 
@@ -45,19 +47,39 @@ public enum MSPDigestAlgorithm: Sendable, Equatable {
     func digestHex(_ data: Data) -> String {
         switch self {
         case .md5:
+            #if canImport(CryptoKit)
             return mspPOSIXHexString(Insecure.MD5.hash(data: data))
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha1:
+            #if canImport(CryptoKit)
             return mspPOSIXHexString(Insecure.SHA1.hash(data: data))
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha224:
             var hasher = MSPSHA224()
             hasher.update(data)
             return mspPOSIXHexString(hasher.finalize())
         case .sha256:
+            #if canImport(CryptoKit)
             return mspPOSIXHexString(SHA256.hash(data: data))
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha384:
+            #if canImport(CryptoKit)
             return mspPOSIXHexString(SHA384.hash(data: data))
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha512:
+            #if canImport(CryptoKit)
             return mspPOSIXHexString(SHA512.hash(data: data))
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sm3:
             var hasher = MSPSM3()
             hasher.update(data)
@@ -76,17 +98,25 @@ public enum MSPDigestAlgorithm: Sendable, Equatable {
     ) throws -> String {
         switch self {
         case .md5:
+            #if canImport(CryptoKit)
             var hasher = Insecure.MD5()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in
                 hasher.update(data: chunk)
             }
             return mspPOSIXHexString(hasher.finalize())
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha1:
+            #if canImport(CryptoKit)
             var hasher = Insecure.SHA1()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in
                 hasher.update(data: chunk)
             }
             return mspPOSIXHexString(hasher.finalize())
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha224:
             var hasher = MSPSHA224()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in
@@ -94,23 +124,35 @@ public enum MSPDigestAlgorithm: Sendable, Equatable {
             }
             return mspPOSIXHexString(hasher.finalize())
         case .sha256:
+            #if canImport(CryptoKit)
             var hasher = SHA256()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in
                 hasher.update(data: chunk)
             }
             return mspPOSIXHexString(hasher.finalize())
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha384:
+            #if canImport(CryptoKit)
             var hasher = SHA384()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in
                 hasher.update(data: chunk)
             }
             return mspPOSIXHexString(hasher.finalize())
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sha512:
+            #if canImport(CryptoKit)
             var hasher = SHA512()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in
                 hasher.update(data: chunk)
             }
             return mspPOSIXHexString(hasher.finalize())
+            #else
+            return mspPOSIXDigestUnavailable(self)
+            #endif
         case .sm3:
             var hasher = MSPSM3()
             try mspPOSIXReadFileChunks(fileSystem: fileSystem, path: path, currentDirectory: currentDirectory) { chunk in

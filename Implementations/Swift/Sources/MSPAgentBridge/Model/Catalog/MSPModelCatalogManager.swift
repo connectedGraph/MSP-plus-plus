@@ -1,4 +1,6 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#endif
 import Foundation
 
 public enum MSPModelCatalogManagerError: Error, Equatable, Sendable {
@@ -576,8 +578,13 @@ public actor MSPModelCatalogManager: MSPModelCatalogResolving {
             appendCredentialScopeField(name, to: &canonical)
             appendCredentialScopeField(value, to: &canonical)
         }
-        let digest = SHA256.hash(data: canonical)
-        return digest.map { String(format: "%02x", $0) }.joined()
+        let digestBytes: [UInt8]
+        #if canImport(CryptoKit)
+        digestBytes = [UInt8](SHA256.hash(data: canonical))
+        #else
+        digestBytes = MSPAgentSHA256.digest(canonical)
+        #endif
+        return digestBytes.map { String(format: "%02x", $0) }.joined()
     }
 
     private static func appendCredentialScopeField(_ value: String, to data: inout Data) {

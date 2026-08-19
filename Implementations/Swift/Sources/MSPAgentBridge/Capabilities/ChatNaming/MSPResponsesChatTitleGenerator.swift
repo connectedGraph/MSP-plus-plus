@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// A lightweight Responses API generator for Chat metadata.
 ///
@@ -53,6 +56,17 @@ public struct MSPResponsesChatTitleGenerator: Sendable,
     /// consumer. Cancelling or timing out a naming request therefore cancels
     /// the underlying URLSession byte task as well.
     public static let urlSessionTransport: HTTPTransport = { request in
+        #if os(Linux)
+        // Linux FoundationNetworking's URLSession has no `bytes(for:)` async
+        // sequence; fall back to `data(for:)` and stream the resulting buffer.
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let stream = AsyncThrowingStream<UInt8, Error>.makeStream()
+        for byte in data {
+            stream.continuation.yield(byte)
+        }
+        stream.continuation.finish()
+        return MSPResponsesHTTPStream(response: response, bytes: stream.stream)
+        #else
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
         return MSPResponsesHTTPStream(
             response: response,
@@ -73,6 +87,7 @@ public struct MSPResponsesChatTitleGenerator: Sendable,
                 }
             }
         )
+        #endif
     }
 
     public func generateTitle(

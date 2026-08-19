@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public final class MSPResponsesStreamingModelClient: MSPAgentModelTurnClient, @unchecked Sendable {
     public typealias HTTPTransport = @Sendable (URLRequest) async throws -> MSPResponsesHTTPStream

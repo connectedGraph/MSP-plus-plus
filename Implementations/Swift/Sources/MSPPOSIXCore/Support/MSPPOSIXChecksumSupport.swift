@@ -55,3 +55,13 @@ private let mspPOSIXCRC32Table: [UInt32] = {
 func mspPOSIXHexString(_ bytes: some Sequence<UInt8>) -> String {
     bytes.map { String(format: "%02x", $0) }.joined()
 }
+
+#if !canImport(CryptoKit)
+// CryptoKit-backed digests (md5/sha1/sha256/sha384/sha512) are unavailable on
+// platforms without CryptoKit (Linux). The MSP++ bridge routes these commands
+// to toybox instead, so a runtime path that reaches here on Linux is a misuse;
+// surface a clear placeholder rather than crashing the toolchain.
+func mspPOSIXDigestUnavailable(_ algorithm: MSPDigestAlgorithm) -> String {
+    "msp: \(algorithm.label) digest unavailable without CryptoKit on this platform"
+}
+#endif

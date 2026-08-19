@@ -1,4 +1,6 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#endif
 import Foundation
 import MSPCore
 
@@ -43,5 +45,14 @@ private func sortRandomDigest(seed: Data, key: Data) -> Data {
     data.append(seed)
     data.append(key)
     data.append(0)
+    #if canImport(CryptoKit)
     return Data(Insecure.MD5.hash(data: data))
+    #else
+    // Without CryptoKit, use Swift's built-in Hasher for a stable pseudo-random
+    // digest. sort -R only needs a stable ordering, not MD5 specifically.
+    var hasher = Hasher()
+    hasher.combine(data)
+    let digest = hasher.finalize()
+    return Data(String(digest).utf8)
+    #endif
 }

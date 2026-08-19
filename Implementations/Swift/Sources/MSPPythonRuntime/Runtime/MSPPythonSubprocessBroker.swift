@@ -48,9 +48,13 @@ public final class MSPPythonSubprocessBroker: @unchecked Sendable {
 
     private func runLoop() {
         while !stopped {
+            #if canImport(ObjectiveC)
             autoreleasepool {
                 processAvailableRequests()
             }
+            #else
+            processAvailableRequests()
+            #endif
             Thread.sleep(forTimeInterval: 0.002)
         }
     }

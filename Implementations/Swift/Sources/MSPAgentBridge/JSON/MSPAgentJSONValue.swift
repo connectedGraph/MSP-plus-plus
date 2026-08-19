@@ -43,11 +43,24 @@ public enum MSPAgentJSONValue: Codable, Hashable, Sendable {
         } else if let value = value as? String {
             self = .string(value)
         } else if let value = value as? NSNumber {
+            #if !os(Linux)
+            // CoreFoundation's CFGetTypeID distinguishes a JSON bool from a number;
+            // unavailable on Linux, which falls back to objCType below.
             if CFGetTypeID(value) == CFBooleanGetTypeID() {
                 self = .bool(value.boolValue)
             } else {
                 self = .number(value.doubleValue)
             }
+            #else
+            // Linux has no usable CoreFoundation; fall back to the objCType
+            // encoding to tell a JSON bool from a number ("c"/"B" => bool).
+            let typeCode = String(cString: value.objCType)
+            if typeCode == "c" || typeCode == "B" {
+                self = .bool(value.boolValue)
+            } else {
+                self = .number(value.doubleValue)
+            }
+            #endif
         } else if let value = value as? [String: Any] {
             var object: [String: MSPAgentJSONValue] = [:]
             for (key, item) in value {
