@@ -157,6 +157,16 @@ let package = Package(
                 "MSPPtySupport"
             ],
             path: "Sources/ModelShellProxy"
+        ),
+        .testTarget(
+            name: "MSPBridgeTests",
+            dependencies: [
+                "ModelShellProxy",
+                "MSPBridge",
+                "MSPApple",
+                "MSPAgentBridge"
+            ],
+            path: "Tests/MSPBridge"
         )
     ]
 )
